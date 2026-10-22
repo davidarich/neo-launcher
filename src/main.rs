@@ -177,7 +177,7 @@ impl eframe::App for NeoLauncher {
         }
         // END - ui repaint hack
 
-        egui::CentralPanel::default().show_inside(ui, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             egui::ScrollArea::both().show(ui, |ui| {
                 ui.set_width(_frame.winit_window().unwrap().inner_size().width as f32 - 24.0);
                 ui.set_height(_frame.winit_window().unwrap().inner_size().height as f32 - 24.0);

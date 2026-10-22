@@ -11,7 +11,7 @@ use crate::{
 pub fn render_main_menu(launcher: &mut NeoLauncher, ui: &mut egui::Ui) {
     ui.add_space(8.0);
     // hamburger menu
-    ui.menu_button("☰", |ui| {
+    ui.menu_button(egui::RichText::new("Menu"), |ui| {
         if ui.button("Reload Config").clicked() {
             match config::load() {
                 Ok(cfg) => {
@@ -75,7 +75,7 @@ pub fn render_main_menu(launcher: &mut NeoLauncher, ui: &mut egui::Ui) {
     let mut workspace_count = 0;
     for workspace in &launcher.config.workspaces {
         if !workspace.is_hidden {
-            let workspace_icon = egui::Image::new(format!("file://{}", workspace.icon_path))
+            let workspace_icon = egui::Image::new(workspace.icon_path.to_string())
                 .fit_to_exact_size(egui::Vec2 { x: 64.0, y: 64.0 });
             let workspace_button = egui::Button::new(workspace_icon).corner_radius(4);
             if ui.add(workspace_button).clicked() {
