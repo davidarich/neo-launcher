@@ -1,0 +1,22 @@
+[package]
+name = "neo-launcher"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+chrono = "0.4.45"
+dirs = "7.0.0"
+eframe = { version = "0.34.2", features = ["default", "__screenshot"] }
+egui_extras = { version = "0.34.2", features = ["all_loaders", "default", "image"] }
+env_logger = { version = "0.11.10", features = ["auto-color", "humantime"] }
+log = "0.4.33"
+saphyr = "0.0.6"
+serde = "1.0.228"
+serde-saphyr = "0.0.26"
+tokio = { version = "1.53.1", features = ["rt", "rt-multi-thread", "time"] }
+winapi = "0.3.9"
+
+[[bin]]
+name = "neo-launcher"
+path = "src/main.rs"
