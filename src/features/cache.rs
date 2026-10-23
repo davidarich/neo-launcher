@@ -1,4 +1,3 @@
-use dirs::data_local_dir;
 use serde::{Deserialize, Serialize};
 
 /// Cache file format version. Bump to invalidate previously saved caches.
@@ -36,21 +35,10 @@ impl WindowCache {
     }
 }
 
-/// Per-user data directory for the launcher:
-/// `~/.local/share/neo-launcher` on Linux, `%LOCALAPPDATA%/neo-launcher` on Windows.
-fn data_dir() -> Option<std::path::PathBuf> {
-    data_local_dir().map(|dir| dir.join("neo-launcher"))
-}
-
-/// Full path to the cache file, e.g. `~/.local/share/neo-launcher/cache.yaml`.
-fn cache_path() -> Option<std::path::PathBuf> {
-    data_dir().map(|dir| dir.join("cache.yaml"))
-}
-
 /// Loads the cached window geometry, returning `None` when the cache file is
 /// missing, unreadable, unparsable, or from an older format version.
 pub fn load() -> Option<WindowCache> {
-    let path = cache_path()?;
+    let path = crate::data::cache_path()?;
     let yaml = std::fs::read_to_string(path).ok()?;
     let cached: WindowCache = serde_saphyr::from_str(&yaml).ok()?;
     (cached.version == CACHE_VERSION).then_some(cached)
@@ -59,7 +47,9 @@ pub fn load() -> Option<WindowCache> {
 /// Saves the cache atomically: write to `cache.yaml.tmp` first, then rename
 /// it over `cache.yaml`, so a crash mid-write can never leave a corrupt cache.
 pub fn save(cached: &WindowCache) -> Result<(), std::io::Error> {
-    let path = cache_path().ok_or_else(|| other_err("could not determine cache file path"))?;
+    // TODO: cleanup and extract to data.rs
+    let path =
+        crate::data::data_dir().ok_or_else(|| other_err("could not determine cache file path"))?;
     let dir = path
         .parent()
         .ok_or_else(|| other_err("could not determine cache directory"))?;

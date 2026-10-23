@@ -1,5 +1,4 @@
 use crate::config;
-use dirs::data_local_dir;
 use serde::Deserialize;
 use std::fs;
 use std::process::Command;
@@ -55,7 +54,7 @@ fn exec_step(cmd: &String, dir: &String) -> bool {
 
 fn script_step(config: config::AppConfig, script_name: &String) -> bool {
     // make sure the scripts directory exists before writing into it
-    let dir = script_dir().unwrap();
+    let dir = crate::data::scripts_dir().unwrap();
     if fs::create_dir_all(&dir).is_err() {
         return false;
     }
@@ -63,8 +62,8 @@ fn script_step(config: config::AppConfig, script_name: &String) -> bool {
     // find script and write to filesystem
     for script in config.scripts {
         if script.name == script_name.to_string() {
-            let script_path = script_path(script_name.to_string());
-            if write_script(script_path.unwrap(), script.value).is_err() {
+            let script_path = crate::data::script_path(script_name.to_string());
+            if crate::data::write_script(script_path.unwrap(), script.value).is_err() {
                 return false;
             }
         }
@@ -72,7 +71,7 @@ fn script_step(config: config::AppConfig, script_name: &String) -> bool {
 
     // execute the script
     if Command::new("cmd")
-        .current_dir(script_dir().unwrap())
+        .current_dir(crate::data::scripts_dir().unwrap())
         .args(["/C", script_name])
         .spawn()
         .is_err()
@@ -81,20 +80,6 @@ fn script_step(config: config::AppConfig, script_name: &String) -> bool {
     }
 
     return true;
-}
-
-fn script_dir() -> Option<std::path::PathBuf> {
-    data_local_dir().map(|dir| dir.join("neo-launcher/scripts"))
-}
-
-fn script_path(script_name: String) -> Option<std::path::PathBuf> {
-    script_dir().map(|dir| dir.join(script_name + ".bat"))
-}
-
-fn write_script(script_path: std::path::PathBuf, contents: String) -> std::io::Result<()> {
-    fs::write(script_path, contents)?;
-
-    Ok(())
 }
 
 pub fn perform_action(steps: Vec<Step>, config: config::AppConfig) {

@@ -4,14 +4,14 @@
 use eframe::egui;
 use log::{debug, warn};
 
-mod cache;
 mod config;
+mod data;
 mod features;
 mod views;
 
 fn main() -> eframe::Result {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
-    let cached_window = cache::load();
+    let cached_window = features::cache::load();
     let options = eframe::NativeOptions {
         viewport: {
             let mut vb = egui::ViewportBuilder::default();
@@ -83,7 +83,7 @@ struct NeoLauncher {
     config: config::AppConfig,
     ui_state: UIState,
     repaint_state: RepaintState,
-    window_cache: Option<cache::WindowCache>,
+    window_cache: Option<features::cache::WindowCache>,
 }
 
 #[derive(Clone, Debug)]
@@ -137,13 +137,13 @@ impl eframe::App for NeoLauncher {
             let scale = window.scale_factor() as f32;
             let size = window.inner_size();
             let current = match window.outer_position() {
-                Ok(pos) => cache::WindowCache::capture(
+                Ok(pos) => features::cache::WindowCache::capture(
                     size.width as f32 / scale,
                     size.height as f32 / scale,
                     pos.x as f32 / scale,
                     pos.y as f32 / scale,
                 ),
-                Err(_) => cache::WindowCache::capture(
+                Err(_) => features::cache::WindowCache::capture(
                     size.width as f32 / scale,
                     size.height as f32 / scale,
                     0.0,
@@ -151,7 +151,7 @@ impl eframe::App for NeoLauncher {
                 ),
             };
             if self.window_cache.as_ref() != Some(&current) {
-                if let Err(e) = cache::save(&current) {
+                if let Err(e) = features::cache::save(&current) {
                     warn!("failed to save window cache: {}", e);
                 }
                 self.window_cache = Some(current);
