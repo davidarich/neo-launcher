@@ -29,6 +29,8 @@ pub struct Workspace {
     pub actions: Vec<Action>,
     #[serde(default)]
     pub action_groups: Vec<ActionGroup>,
+    #[serde(default)]
+    pub direct_action: Vec<step::Step>,
 }
 
 #[allow(dead_code)]

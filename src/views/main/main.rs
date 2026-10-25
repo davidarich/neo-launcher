@@ -5,6 +5,7 @@ use log::warn;
 use crate::{
     NeoLauncher, config,
     features::clock::{get_clock_color, next_phase_start},
+    features::step,
 };
 
 // Main Menu View
@@ -78,9 +79,17 @@ pub fn render_main_menu(launcher: &mut NeoLauncher, ui: &mut egui::Ui) {
             let workspace_icon = egui::Image::new(workspace.icon_path.to_string())
                 .fit_to_exact_size(egui::Vec2 { x: 64.0, y: 64.0 });
             let workspace_button = egui::Button::new(workspace_icon).corner_radius(4);
+
             if ui.add(workspace_button).clicked() {
-                launcher.ui_state.nav_workspace_menu(workspace_count);
+                if workspace.direct_action.len() > 0 {
+                    // workspace is configured as a direct action and steps execute on button press
+                    step::perform_action(workspace.direct_action.clone(), launcher.config.clone())
+                } else {
+                    // workspace is configured with actions and related contextual actions
+                    launcher.ui_state.nav_workspace_menu(workspace_count);
+                }
             }
+
             ui.add_space(8.0);
         }
         workspace_count += 1;
