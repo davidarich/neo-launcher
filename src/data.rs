@@ -27,3 +27,25 @@ pub fn write_script(script_path: std::path::PathBuf, contents: String) -> std::i
 
     Ok(())
 }
+
+/// Atomically persists `contents` to `path`: writes to a sibling `*.tmp` file
+/// first, then renames it over `path`, so a crash mid-write can never leave
+/// a corrupt file behind.
+pub fn write_atomic(path: &std::path::Path, contents: &str) -> std::io::Result<()> {
+    let dir = path.parent().ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::Other, "path has no parent directory")
+    })?;
+    std::fs::create_dir_all(dir)?;
+
+    let name = path
+        .file_name()
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "path has no file name"))?;
+    let tmp = dir.join(format!("{}.tmp", name.to_string_lossy()));
+    std::fs::write(&tmp, contents.as_bytes())?;
+
+    // Windows won't rename over an existing file, so remove it first.
+    if path.exists() {
+        std::fs::remove_file(path)?;
+    }
+    std::fs::rename(&tmp, path)
+}

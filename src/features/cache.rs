@@ -47,23 +47,10 @@ pub fn load() -> Option<WindowCache> {
 /// Saves the cache atomically: write to `cache.yaml.tmp` first, then rename
 /// it over `cache.yaml`, so a crash mid-write can never leave a corrupt cache.
 pub fn save(cached: &WindowCache) -> Result<(), std::io::Error> {
-    // TODO: cleanup and extract to data.rs
-    let path =
-        crate::data::data_dir().ok_or_else(|| other_err("could not determine cache file path"))?;
-    let dir = path
-        .parent()
-        .ok_or_else(|| other_err("could not determine cache directory"))?;
-    std::fs::create_dir_all(dir)?;
-
-    let tmp = dir.join("cache.yaml.tmp");
+    let path = crate::data::cache_path()
+        .ok_or_else(|| other_err("could not determine cache file path"))?;
     let yaml = serde_saphyr::to_string(cached).map_err(other_err)?;
-    std::fs::write(&tmp, yaml.as_bytes())?;
-
-    // Windows won't rename over an existing file, so remove it first.
-    if path.exists() {
-        std::fs::remove_file(&path)?;
-    }
-    std::fs::rename(&tmp, &path).map_err(other_err)
+    crate::data::write_atomic(&path, &yaml)
 }
 
 /// Wraps non-io failures into an `io::Error::Other` so `save` can report
