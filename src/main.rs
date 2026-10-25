@@ -56,6 +56,7 @@ struct UIState {
     active_view: LauncherView,
     last_update: std::time::Instant,
     config_error: Option<String>,
+    settings_open: bool,
 }
 
 impl UIState {
@@ -117,6 +118,7 @@ impl Default for NeoLauncher {
                 last_update: std::time::Instant::now(),
                 workspace_id: 0,
                 config_error,
+                settings_open: false,
             },
             repaint_state: RepaintState {
                 started: false,
@@ -194,5 +196,25 @@ impl eframe::App for NeoLauncher {
                 }
             });
         });
+
+        // settings window
+        if self.ui_state.settings_open {
+            ui.ctx().show_viewport_immediate(
+                egui::ViewportId::from_hash_of("settings"),
+                egui::ViewportBuilder::default()
+                    .with_title("Settings")
+                    .with_inner_size([600.0, 480.0]),
+                |ui, class| {
+                    if class != egui::ViewportClass::EmbeddedWindow {
+                        egui::CentralPanel::default().show(ui, |ui| {
+                            ui.label("hello world");
+                        });
+                    }
+                    if ui.input(|i| i.viewport().close_requested()) {
+                        self.ui_state.settings_open = false;
+                    }
+                },
+            );
+        }
     }
 }

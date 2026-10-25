@@ -25,9 +25,9 @@ pub fn render_main_menu(launcher: &mut NeoLauncher, ui: &mut egui::Ui) {
                 }
             }
         }
-        // TODO: open settings window when the settings UI is implemented
+
         if ui.button("Open Settings").clicked() {
-            // no-op for now
+            launcher.ui_state.settings_open = true;
         }
     });
 
