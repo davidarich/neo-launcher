@@ -1,22 +1,22 @@
 use super::features::step;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Action {
     pub name: String,
     pub steps: Vec<step::Step>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionGroup {
     pub name: String,
     pub actions: Vec<Action>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Workspace {
     #[serde(default)]
@@ -34,7 +34,7 @@ pub struct Workspace {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Program {
     name: String,
@@ -43,7 +43,7 @@ pub struct Program {
     bin_name: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TimePhase {
     #[allow(dead_code)]
@@ -53,14 +53,14 @@ pub struct TimePhase {
     pub color: String,
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClockConfig {
     pub default_color: String,
     pub phases: Vec<TimePhase>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppConfig {
     // version: String,
@@ -73,19 +73,45 @@ pub struct AppConfig {
     pub scripts: Vec<Script>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Script {
     pub name: String,
     pub value: String,
 }
 
+/// Minimal valid config written to disk on first launch, before any user edits.
+/// `clock` is the only required section; everything else falls back to defaults.
+const DEFAULT_CONFIG: &str = r##"clock:
+  defaultColor: "#cccccc"
+  phases: []
+"##;
+
 pub fn load() -> Result<AppConfig, String> {
-    // TODO: the file could also not exist, prompt for creation
-    let config_string: String = fs::read_to_string("assets/config.yaml")
+    let config_path =
+        super::data::config_path().ok_or_else(|| "Failed to determine config path".to_string())?;
+
+    // The config file may not exist yet (first launch), so create it.
+    if !config_path.exists() {
+        super::data::write_atomic(&config_path, DEFAULT_CONFIG)
+            .map_err(|e| format!("Failed to create default config file: {}", e))?;
+    }
+
+    let config_string: String = fs::read_to_string(config_path)
         .map_err(|e| format!("Failed to read config file: {}", e))?;
 
     let config: AppConfig = serde_saphyr::from_str(&config_string[..])
         .map_err(|e| format!("Failed to parse config: {}", e))?;
     return Ok(config);
+}
+
+pub fn save(config: AppConfig) -> Result<(), String> {
+    let config_path =
+        super::data::config_path().ok_or_else(|| "Failed to determine config path".to_string())?;
+
+    let yaml = serde_saphyr::to_string(&config)
+        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+    super::data::write_atomic(&config_path, &yaml)
+        .map_err(|e| format!("Failed to save config file: {}", e))?;
+    Ok(())
 }

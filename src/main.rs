@@ -4,6 +4,8 @@
 use eframe::egui;
 use log::{debug, warn};
 
+use crate::{config::AppConfig, views::settings::main::render_settings_menu};
+
 mod config;
 mod data;
 mod features;
@@ -73,6 +75,32 @@ impl UIState {
     }
 }
 
+#[derive(Clone, Debug)]
+struct SettingsUIState {
+    selected_view: SettingsView,
+    modified_config: AppConfig,
+    scripts_state: views::settings::scripts::ScriptsUIState,
+}
+
+#[derive(Clone, Debug)]
+enum SettingsView {
+    MainMenu,
+    Workspaces,
+    Scripts,
+}
+
+impl SettingsUIState {
+    fn nav_main_menu(&mut self) {
+        self.selected_view = SettingsView::MainMenu;
+    }
+    fn nav_workspaces(&mut self) {
+        self.selected_view = SettingsView::Workspaces;
+    }
+    fn nav_scripts(&mut self) {
+        self.selected_view = SettingsView::Scripts;
+    }
+}
+
 struct RepaintState {
     started: bool,
     tick_rate: std::time::Duration,
@@ -83,6 +111,7 @@ struct NeoLauncher {
     rt: tokio::runtime::Runtime,
     config: config::AppConfig,
     ui_state: UIState,
+    settings_ui_state: SettingsUIState,
     repaint_state: RepaintState,
     window_cache: Option<features::cache::WindowCache>,
 }
@@ -120,12 +149,35 @@ impl Default for NeoLauncher {
                 config_error,
                 settings_open: false,
             },
+            settings_ui_state: SettingsUIState {
+                selected_view: SettingsView::MainMenu,
+                modified_config: config::AppConfig::default(),
+                scripts_state: views::settings::scripts::ScriptsUIState::default(),
+            },
             repaint_state: RepaintState {
                 started: false,
                 tick_rate: std::time::Duration::from_secs(60),
                 last_tick: std::time::Instant::now(),
             },
             window_cache: None,
+        }
+    }
+}
+
+impl NeoLauncher {
+    fn open_settings_window(&mut self) {
+        self.ui_state.settings_open = true;
+        self.settings_ui_state.modified_config = self.config.clone();
+    }
+
+    fn close_settings_window(&mut self) {
+        self.ui_state.settings_open = false;
+    }
+
+    fn save_settings(&mut self) {
+        self.config = self.settings_ui_state.modified_config.clone();
+        if let Err(e) = config::save(self.config.clone()) {
+            warn!("failed to save config: {}", e);
         }
     }
 }
@@ -203,15 +255,15 @@ impl eframe::App for NeoLauncher {
                 egui::ViewportId::from_hash_of("settings"),
                 egui::ViewportBuilder::default()
                     .with_title("Settings")
-                    .with_inner_size([600.0, 480.0]),
+                    .with_inner_size([768.0, 640.0]),
                 |ui, class| {
                     if class != egui::ViewportClass::EmbeddedWindow {
                         egui::CentralPanel::default().show(ui, |ui| {
-                            ui.label("hello world");
+                            render_settings_menu(self, ui);
                         });
                     }
                     if ui.input(|i| i.viewport().close_requested()) {
-                        self.ui_state.settings_open = false;
+                        self.close_settings_window();
                     }
                 },
             );

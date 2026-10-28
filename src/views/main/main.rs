@@ -11,7 +11,6 @@ use crate::{
 // Main Menu View
 pub fn render_main_menu(launcher: &mut NeoLauncher, ui: &mut egui::Ui) {
     ui.add_space(8.0);
-    // hamburger menu
     ui.menu_button(egui::RichText::new("Menu"), |ui| {
         if ui.button("Reload Config").clicked() {
             match config::load() {
@@ -27,7 +26,7 @@ pub fn render_main_menu(launcher: &mut NeoLauncher, ui: &mut egui::Ui) {
         }
 
         if ui.button("Open Settings").clicked() {
-            launcher.ui_state.settings_open = true;
+            launcher.open_settings_window();
         }
     });
 

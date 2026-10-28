@@ -1,11 +1,11 @@
 use crate::config;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::process::Command;
 // see doc for generic nested structs so multiple step types can exist within a single step vector to provide a friendlier config
 // https://stackoverflow.com/questions/74882738/how-do-add-generic-types-in-nested-structs-in-rust
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Step {
     #[serde(rename = "type")]
@@ -16,7 +16,7 @@ pub struct Step {
     pub specific_step: SpecificStep,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", untagged)]
 pub enum SpecificStep {
     ExecStep {

@@ -55,6 +55,6 @@ pub fn save(cached: &WindowCache) -> Result<(), std::io::Error> {
 
 /// Wraps non-io failures into an `io::Error::Other` so `save` can report
 /// serialization and path errors through a single error type.
-fn other_err(msg: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> std::io::Error {
+pub fn other_err(msg: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::Other, msg)
 }

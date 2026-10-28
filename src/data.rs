@@ -11,6 +11,11 @@ pub fn cache_path() -> Option<std::path::PathBuf> {
     data_dir().map(|dir| dir.join("cache.yaml"))
 }
 
+/// Full path to the config file, e.g. `~/.local/share/neo-launcher/config.yaml`.
+pub fn config_path() -> Option<std::path::PathBuf> {
+    data_dir().map(|dir| dir.join("config.yaml"))
+}
+
 /// Directory containing the launcher's scripts.
 pub fn scripts_dir() -> Option<std::path::PathBuf> {
     data_dir().map(|dir| dir.join("scripts"))
