@@ -39,123 +39,136 @@ pub fn render_scripts_menu(
     ui.label(egui::RichText::new("Scripts").size(18.0));
     ui.add_space(2.0);
 
-    // Script selector combo box; disabled when there are no scripts.
-    // `ComboBox` does not implement `Widget`, so the disabled case shows a
-    // plain disabled button instead.
-    if config.scripts.is_empty() {
-        ui.add_enabled(false, egui::Button::new("No scripts"));
-    } else {
-        let mut selected = state.selected_script.unwrap_or(0);
-        if selected >= config.scripts.len() {
-            selected = 0;
+    // script select & buttons
+    ui.horizontal(|ui| {
+        // Script selector combo box; disabled when there are no scripts.
+        // `ComboBox` does not implement `Widget`, so the disabled case shows a
+        // plain disabled button instead.
+        if config.scripts.is_empty() {
+            ui.add_enabled(false, egui::Button::new("No scripts"));
+        } else {
+            let mut selected = state.selected_script.unwrap_or(0);
+            if selected >= config.scripts.len() {
+                selected = 0;
+            }
+            egui::ComboBox::new("script_selector", "").show_index(
+                ui,
+                &mut selected,
+                config.scripts.len(),
+                |i| config.scripts[i].name.clone(),
+            );
+            state.selected_script = Some(selected);
         }
-        egui::ComboBox::new("script_selector", "Script:").show_index(
-            ui,
-            &mut selected,
-            config.scripts.len(),
-            |i| config.scripts[i].name.clone(),
-        );
-        state.selected_script = Some(selected);
-    }
 
-    ui.add_space(4.0);
+        ui.add_space(4.0);
 
-    // "Delete Script" button toggles the confirmation popup window.
-    if ui.button("Delete Script").clicked() {
-        if state.selected_script.is_some() {
-            state.show_delete_script = !state.show_delete_script;
+        // "Delete Script" button toggles the confirmation popup window.
+        if ui.button("Delete Script").clicked() {
+            if state.selected_script.is_some() {
+                state.show_delete_script = !state.show_delete_script;
+            }
         }
-    }
 
-    // "New Script" button toggles the popup window for entering a script name.
-    if ui.button("New Script").clicked() {
-        state.show_add_script = !state.show_add_script;
-    }
+        ui.add_space(4.0);
 
-    if state.show_add_script {
-        // `Window::open` borrows the flag for the whole `show` call, so a
-        // local mirror is used and synced back below.
-        let mut show = true;
-        let mut done = false;
-        egui::Window::new("New Script")
-            .open(&mut show)
-            .resizable(false)
-            .collapsible(false)
-            .show(ui.ctx(), |ui| {
-                ui.label("Name:");
-                ui.add(egui::TextEdit::singleline(&mut state.new_script_name));
-                ui.add_space(2.0);
-                ui.horizontal(|ui| {
-                    if ui.button("Add").clicked() {
-                        let name = state.new_script_name.trim().to_string();
-                        if !name.is_empty() {
-                            config.scripts.push(config::Script {
-                                name,
-                                value: String::new(),
-                            });
-                            // Select the newly added script.
-                            state.selected_script = Some(config.scripts.len() - 1);
+        // "New Script" button toggles the popup window for entering a script name.
+        if ui.button("New Script").clicked() {
+            state.show_add_script = !state.show_add_script;
+        }
+
+        if state.show_add_script {
+            // `Window::open` borrows the flag for the whole `show` call, so a
+            // local mirror is used and synced back below.
+            let mut show = true;
+            let mut done = false;
+            egui::Window::new("New Script")
+                .open(&mut show)
+                .resizable(false)
+                .collapsible(false)
+                .show(ui.ctx(), |ui| {
+                    ui.label("Name:");
+                    ui.add(egui::TextEdit::singleline(&mut state.new_script_name));
+                    ui.add_space(2.0);
+                    ui.horizontal(|ui| {
+                        if ui.button("Add").clicked() {
+                            let name = state.new_script_name.trim().to_string();
+                            if !name.is_empty() {
+                                config.scripts.push(config::Script {
+                                    name,
+                                    value: String::new(),
+                                });
+                                // Select the newly added script.
+                                state.selected_script = Some(config.scripts.len() - 1);
+                                state.new_script_name = String::new();
+                                done = true;
+                            }
+                        }
+                        if ui.button("Cancel").clicked() {
                             state.new_script_name = String::new();
                             done = true;
                         }
-                    }
-                    if ui.button("Cancel").clicked() {
-                        state.new_script_name = String::new();
-                        done = true;
-                    }
+                    });
                 });
-            });
-        state.show_add_script = show && !done;
-    }
+            state.show_add_script = show && !done;
+        }
 
-    if state.show_delete_script {
-        let mut show = true;
-        let mut done = false;
-        let script_name = state
-            .selected_script
-            .filter(|i| *i < config.scripts.len())
-            .map(|i| config.scripts[i].name.clone())
-            .unwrap_or_default();
-        egui::Window::new("Delete Script")
-            .open(&mut show)
-            .resizable(false)
-            .collapsible(false)
-            .show(ui.ctx(), |ui| {
-                ui.label(format!(
-                    "Are you sure you want to delete the script named {}",
-                    script_name
-                ));
-                ui.add_space(2.0);
-                ui.horizontal(|ui| {
-                    if ui.button("Yes").clicked() {
-                        if let Some(idx) = state.selected_script {
-                            if idx < config.scripts.len() {
-                                config.scripts.remove(idx);
-                                state.selected_script = None;
+        if state.show_delete_script {
+            let mut show = true;
+            let mut done = false;
+            let script_name = state
+                .selected_script
+                .filter(|i| *i < config.scripts.len())
+                .map(|i| config.scripts[i].name.clone())
+                .unwrap_or_default();
+            egui::Window::new("Delete Script")
+                .open(&mut show)
+                .resizable(false)
+                .collapsible(false)
+                .show(ui.ctx(), |ui| {
+                    ui.label(format!(
+                        "Are you sure you want to delete the script named {}",
+                        script_name
+                    ));
+                    ui.add_space(2.0);
+                    ui.horizontal(|ui| {
+                        if ui.button("Yes").clicked() {
+                            if let Some(idx) = state.selected_script {
+                                if idx < config.scripts.len() {
+                                    config.scripts.remove(idx);
+                                    state.selected_script = None;
+                                }
                             }
+                            done = true;
                         }
-                        done = true;
-                    }
-                    if ui.button("No").clicked() {
-                        done = true;
-                    }
+                        if ui.button("No").clicked() {
+                            done = true;
+                        }
+                    });
                 });
-            });
-        state.show_delete_script = show && !done;
-    }
+            state.show_delete_script = show && !done;
+        }
+    });
 
     // Code editor for the selected script; disabled when none is selected.
     ui.add_space(8.0);
     ui.label(egui::RichText::new("Script Code").size(14.0));
     ui.add_space(2.0);
 
+    // add margins to editor size
+    let mut editor_size = ui.available_size();
+    //editor_size[0] = editor_size[0] - 16.0; // y axis
+    editor_size[1] = editor_size[1] - 48.0; // x axis
+
     match state.selected_script {
         Some(idx) if idx < config.scripts.len() => {
-            ui.add(
-                egui::TextEdit::multiline(&mut config.scripts[idx].value)
-                    .code_editor()
-                    .desired_width(f32::INFINITY),
-            );
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.add_sized(
+                    editor_size,
+                    egui::TextEdit::multiline(&mut config.scripts[idx].value)
+                        .code_editor()
+                        .desired_width(f32::INFINITY),
+                );
+            });
         }
         _ => {
             let mut placeholder = String::new();
@@ -167,4 +180,5 @@ pub fn render_scripts_menu(
             );
         }
     }
+    ui.add_space(12.0)
 }

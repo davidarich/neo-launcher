@@ -21,39 +21,43 @@ pub fn render_settings_menu(launcher: &mut NeoLauncher, ui: &mut egui::Ui) {
         });
     });
 
-    if matches!(
-        launcher.settings_ui_state.selected_view,
-        SettingsView::MainMenu
-    ) {
-        crate::views::settings::main_menu::render_main_menu(ui)
-    } else if matches!(
-        launcher.settings_ui_state.selected_view,
-        SettingsView::Workspaces
-    ) {
-        crate::views::settings::workspaces::render_workspaces_menu(ui)
-    } else if matches!(
-        launcher.settings_ui_state.selected_view,
-        SettingsView::Scripts
-    ) {
-        crate::views::settings::scripts::render_scripts_menu(
-            ui,
-            &mut launcher.settings_ui_state.modified_config,
-            &mut launcher.settings_ui_state.scripts_state,
-        )
-    }
+    egui::CentralPanel::default_margins().show(ui, |ui| {
+        if matches!(
+            launcher.settings_ui_state.selected_view,
+            SettingsView::MainMenu
+        ) {
+            crate::views::settings::main_menu::render_main_menu(ui)
+        } else if matches!(
+            launcher.settings_ui_state.selected_view,
+            SettingsView::Workspaces
+        ) {
+            crate::views::settings::workspaces::render_workspaces_menu(ui)
+        } else if matches!(
+            launcher.settings_ui_state.selected_view,
+            SettingsView::Scripts
+        ) {
+            crate::views::settings::scripts::render_scripts_menu(
+                ui,
+                &mut launcher.settings_ui_state.modified_config,
+                &mut launcher.settings_ui_state.scripts_state,
+            )
+        }
 
-    ui.horizontal(|ui| {
-        if ui.button("Close").clicked() {
-            launcher.close_settings_window();
-        }
-        if ui.button("Save").clicked() {
-            launcher.save_settings();
-        }
-        if ui.button("Save & Close").clicked() {
-            launcher.save_settings();
-            launcher.close_settings_window();
-        }
+        ui.add_space(4.0);
+        ui.horizontal(|ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                // order is inverted since layout is from right
+                if ui.button("Save & Close").clicked() {
+                    launcher.save_settings();
+                    launcher.close_settings_window();
+                }
+                if ui.button("Save").clicked() {
+                    launcher.save_settings();
+                }
+                if ui.button("Cancel").clicked() {
+                    launcher.close_settings_window();
+                }
+            });
+        });
     });
-
-    // TODO: add a horizontal container with right alignment
 }
